@@ -10,6 +10,8 @@ The phone is still in Android. No Download Mode transition, reboot, block read, 
 
 Added `tools/a50-fdt-report.py` for the next offline DTB artifact: it reports memory banks, CPU MPIDRs/PSCI, GIC/timer registers, and splash/framebuffer/display properties while omitting all `chosen/bootargs` values. It accepts one raw FDT, not a multi-DTB container. No device dump or identifier is stored in the checkout. The tool has not been run because no matching raw DTB is available.
 
+Follow-up read-only retrieval attempt: `adb pull /sys/firmware/fdt` and `adb pull /proc/device-tree/interrupt-controller@12300000/reg` both return `remote object ... does not exist`; shell reads of FDT property files remain denied by Android permissions. No local dump was created. `adb get-state` previously confirmed the phone remained connected in Android.
+
 ### >>> UPDATE 2026-10-27: A50 XNU kernel build <<<
 
 The authenticated GitHub account has a writable fork at `askinayarra5-spec/ios-topaz`; pushes target that fork, not `MakrSas/ios-topaz`. A50 run `40613824506` failed because patch `0951` encoded `MASTER.arm64.a50` as one line with literal `\n`; `doconf` printed `Missing '}'`. The patch was corrected in commit `517582a`, then A50 run `40614901309` passed. Its `kernel.development.a50` artifact is 18,035,312 bytes, SHA-256 `481b6b293662124593e3d80c1b30946bc22c7eb1f5a9f50b4abd4ac226874b3e`, Mach-O ARM64 (`cputype 0x0100000c`, subtype 0). SWEET run `40612975629` also passed at commit `22295b2`. This is a standalone XNU kernel, not a Samsung boot image.
