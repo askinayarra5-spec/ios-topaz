@@ -22,6 +22,18 @@ The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `e
 
 The target does not include an A50 shim or ADT, Samsung boot handoff, Exynos UFS driver, or DECON display driver. It cannot produce an image suitable for this handset yet.
 
+## CPU and 16 KB page-granule constraint
+
+The A50's Exynos 9610 DTS maps the Cortex-A53 cluster to MPIDRs `0x0–0x3` and the Cortex-A73 cluster to `0x100–0x103`, with PSCI CPU bring-up. Arm documents `ID_AA64MMFR0_EL1.TGran16=0` for Cortex-A53 (16 KB translation granule unsupported) and `TGran16=1` for Cortex-A73 (supported): [Cortex-A53 TRM](https://documentation-service.arm.com/static/6040c321ee937942ba301626), [Cortex-A73 TRM](https://documentation-service.arm.com/static/5e7b6b167158f500bd5bf124).
+
+The A50 XNU ADT must therefore advertise only the four A73 CPUs. If Samsung S-Boot starts the shim on an A53, an A50 shim must transfer execution to A73 MPIDR `0x100` with PSCI before entering XNU. The topaz shim already has an analogous A53-to-A73 handoff, but its GICv3, Qualcomm clock, UFS and framebuffer setup cannot be copied as an A50 implementation. This cluster mapping is from the public Samsung DTS; the connected phone's live `ID_AA64MMFR0_EL1` and S-Boot entry CPU have not been measured.
+
+## First-boot diagnostics and firmware access
+
+The local A50 Halium device notes report no usable serial console and that enabling the generic Linux framebuffer console crashes against Samsung's DECON driver. Those findings are for its Linux port, but they mean the topaz framebuffer console cannot be assumed to work as an A50 shim diagnostic. The shim needs an independently verified DECON/retained-framebuffer path or another observable log channel before a blind boot attempt.
+
+The exact stock build is `A505FDDS9CWA1`, but no matching firmware archive or DTB has been acquired. Current public download routes either require an IMEI/serial for Samsung FUS access or have not yielded a direct archive. Do not submit the handset's identifiers to a third party; the connected shell also cannot read the protected live FDT or raw DTB block. The public kernel DTS remains a candidate reference, not a replacement for those artifacts.
+
 ## Candidate hardware facts from Samsung's A50 kernel source
 
 The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a50/kernel-source-9610/tree/master/arch/arm64/boot/dts/exynos) gives useful starting points. These are source-tree values, **not yet read from the connected handset**, and must be checked against its exact model, live DT and firmware before use.

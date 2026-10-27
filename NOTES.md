@@ -1,5 +1,13 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+### >>> UPDATE 2026-10-27: A50 boot-path safety findings <<<
+
+The A50 XNU artifact remains build-only. Arm's Cortex-A53 TRM gives `ID_AA64MMFR0_EL1.TGran16=0` (no 16 KB granule); the Cortex-A73 TRM gives `TGran16=1`. The public Exynos 9610 DTS maps A53 MPIDRs `0x0-0x3` and A73 MPIDRs `0x100-0x103`, so the A50 ADT must initially expose only the A73 cluster and the shim must use PSCI to hand off to `0x100` if S-Boot enters on an A53. Existing topaz shim logic has a similar CPU handoff, but its Qualcomm GICv3/clock/UFS/framebuffer setup is not reusable for Exynos. References are recorded in `PORTING-SAMSUNG-A50.md`.
+
+The cached A50 Halium device notes report no serial console and a crash with the generic Linux framebuffer console on Samsung DECON. Treat that as a strong warning for diagnostics, not a confirmed behavior of a new bare-metal shim. No verified A50 logging channel exists yet. The exact `A505FDDS9CWA1` stock package was not obtained: available Samsung FUS routes require device identifiers, which were not submitted, and the alternate direct-link attempt did not provide the archive. Android's protected live FDT and DTB block remain unreadable to the authorized non-root ADB shell.
+
+The phone is still in Android. No Download Mode transition, reboot, block read, boot attempt, or flash/write was performed. ADB can request a Download Mode reboot, but that would only change modes; it would not make the standalone XNU kernel bootable. Next work: obtain matching stock boot/DTB data without exposing device identifiers, identify an observable first-boot diagnostic channel, and build an A50-only shim/ADT. Do not use the topaz image or enter Download Mode until those blockers and a stock restore path are resolved.
+
 ### >>> UPDATE 2026-10-27: A50 XNU kernel build <<<
 
 The authenticated GitHub account has a writable fork at `askinayarra5-spec/ios-topaz`; pushes target that fork, not `MakrSas/ios-topaz`. A50 run `40613824506` failed because patch `0951` encoded `MASTER.arm64.a50` as one line with literal `\n`; `doconf` printed `Missing '}'`. The patch was corrected in commit `517582a`, then A50 run `40614901309` passed. Its `kernel.development.a50` artifact is 18,035,312 bytes, SHA-256 `481b6b293662124593e3d80c1b30946bc22c7eb1f5a9f50b4abd4ac226874b3e`, Mach-O ARM64 (`cputype 0x0100000c`, subtype 0). SWEET run `40612975629` also passed at commit `22295b2`. This is a standalone XNU kernel, not a Samsung boot image.
