@@ -1,9 +1,8 @@
+diff --git a/bsd/kern/syscalls.master b/bsd/kern/syscalls.master
+index 5b8e184..5988d0e 100644
 --- a/bsd/kern/syscalls.master
 +++ b/bsd/kern/syscalls.master
-@@ -650,7 +650,11 @@
- 432	AUE_NULL	ALL	{ int audit_session_port(au_asid_t asid, user_addr_t portnamep); }
- 433	AUE_NULL	ALL	{ int pid_suspend(int pid); }
- 434	AUE_NULL	ALL	{ int pid_resume(int pid); }
+@@ -653,7 +653,11 @@
  #if CONFIG_EMBEDDED
  435	AUE_NULL	ALL	{ int pid_hibernate(int pid); }
  #else
@@ -12,9 +11,14 @@
 +#else
  435     AUE_NULL        ALL     { int nosys(void); }
 +#endif /* ARM64_BOARD_CONFIG_SWEET */
+ #endif
+ #if SOCKETS
+ 436	AUE_NULL	ALL	{ int pid_shutdown_sockets(int pid, int level); }
+diff --git a/bsd/vm/vm_unix.c b/bsd/vm/vm_unix.c
+index 5f5bdd6..bb4a5d8 100644
 --- a/bsd/vm/vm_unix.c
 +++ b/bsd/vm/vm_unix.c
-@@ -1755,7 +1755,12 @@
+@@ -1755,7 +1755,12 @@ out:
  	return error;
  }
  
@@ -28,7 +32,7 @@
  /*
   * Freeze the specified process (provided in args->pid), or find and freeze a PID.
   * When a process is specified, this call is blocking, otherwise we wake up the
-@@ -1817,7 +1822,7 @@
+@@ -1817,7 +1822,7 @@ out:
  	*ret = error;
  	return error;
  }

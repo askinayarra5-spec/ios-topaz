@@ -157,15 +157,7 @@ diff --git a/pexpert/arm/pe_fiq.c b/pexpert/arm/pe_fiq.c
 index 6089db9..c50c6e1 100644
 --- a/pexpert/arm/pe_fiq.c
 +++ b/pexpert/arm/pe_fiq.c
-@@ -3,6 +3,7 @@
-  */
- 
- #include <stdint.h>
-+#include <libkern/libkern.h>
- #include <libkern/section_keywords.h>
- #include <arm64/proc_reg.h>
- #include <kern/clock.h>
-@@ -222,6 +223,113 @@ pe_init_fiq()
+@@ -222,6 +222,117 @@ pe_init_fiq()
  	__builtin_arm_isb(ISB_SY);
  #endif /* SWEET */
  }
@@ -250,7 +242,11 @@ index 6089db9..c50c6e1 100644
 +		if (prop_size < sizeof(reg)) {
 +			panic("%s: invalid A50 GIC reg property (%u bytes)", __func__, prop_size);
 +		}
-+		memcpy(reg, prop, sizeof(reg));
++		uint8_t *reg_bytes = (uint8_t *)reg;
++		uint8_t const *prop_bytes = (uint8_t const *)prop;
++		for (unsigned int i = 0; i < sizeof(reg); i++) {
++			reg_bytes[i] = prop_bytes[i];
++		}
 +
 +		vm_offset_t soc_base_phys = pe_arm_get_soc_base_phys();
 +		a50_gicd_base = ml_io_map(soc_base_phys + reg[0], reg[1]);
