@@ -1,5 +1,9 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+### >>> UPDATE 2026-10-27: Samsung Galaxy A50 request <<<
+
+The user asked to adapt `MakrSas/ios-topaz` for a Samsung Galaxy A50. This checkout is the `topaz` branch and remains a Redmi Note 12 4G / SM6225 port; it is not an A50 build. Added `PORTING-SAMSUNG-A50.md` with the verified hardware/boot-flow differences and a staged bring-up checklist, and linked it from `README.md`. No device was connected or booted, no kernel/image was built, and no tests were run. **Next:** confirm the exact A50 model code and firmware, then gather its stock DTB/DTBO and boot metadata before changing board code. Do not reuse topaz boot images or flash instructions on A50.
+
 ## Agent handoff / active work (2026-10-15, latest)
 
 ### >>> UPDATE 2026-10-18 (read first, then the 10-17 handoff below) <<<
