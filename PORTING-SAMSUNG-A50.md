@@ -40,3 +40,9 @@ The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a
 ## Current boundary
 
 The work in this checkout is a hardware assessment and port checklist only. There is no A50 ADT, shim, XNU patch set, built image or device boot result yet. The repository's existing topaz instructions remain valid only for the Redmi Note 12 4G. No A50 image should be flashed or booted from this tree.
+
+## Live connected-device inspection (2026-10-27)
+
+Windows sees a Samsung USB composite parent (`USB\VID_04E8&PID_685D`) with a `Gadget Serial` CDC modem child on COM3. Platform Tools 37.0.1 expose no physical ADB device, and fastboot exposes none. Read-only modem identity queries did not return text. These observations do not identify the exact A50 model or prove whether Android or Samsung Download Mode is on screen. Do not infer that `PID_685D` means the handset is ready to accept a boot image.
+
+No phone boot, flash, PIT read, or partition write has been performed. The host is missing the VC++ 2012 runtime needed to launch the cached Heimdall CLI, so no Heimdall command has reached the USB device. An A50 boot attempt remains blocked by the lack of a matching A50 image and verified Samsung boot path; the topaz Xiaomi boot image is incompatible.

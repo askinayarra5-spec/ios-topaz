@@ -2,6 +2,12 @@
 
 ### >>> UPDATE 2026-10-27: Samsung Galaxy A50 request <<<
 
+### >>> UPDATE 2026-10-27: live A50 USB/boot attempt <<<
+
+The user now explicitly asked to boot the connected A50 into iOS. Windows reports the phone as `Gadget Serial` (`USB\VID_04E8&PID_685D`) with only a Samsung modem child interface (COM3); Platform Tools still show no physical ADB or fastboot device. Read-only `AT`, `ATI`, `AT+CGMM`, and `AT+CGMR` queries on COM3 returned no text. The USB descriptors do not establish the handset model or whether it is in Android or Download Mode. A previous UI-state question is still unanswered.
+
+There is no A50 kernel, ADT, shim image, or iOS root image in this checkout. Do not send a topaz image to this device. No boot, flash, PIT, or partition write was attempted. Heimdall's Windows CLI is x86 and cannot start without the VC++ 2012 runtime. The matching Microsoft package was downloaded to `C:\Users\A\.cache\vc2012-x86` and its Authenticode signature/hash verified; local extraction did not complete, and the runtime was not installed. Next useful step: learn the screen state and exact model (Android with authorized USB debugging, or a visible Download Mode/model label), then get matching stock firmware and DT data. The public SM-A505F DT values remain candidates only.
+
 The user asked to adapt `MakrSas/ios-topaz` for a Samsung Galaxy A50. This checkout is the `topaz` branch and remains a Redmi Note 12 4G / SM6225 port; it is not an A50 build. Added `PORTING-SAMSUNG-A50.md` with the hardware differences and a staged bring-up checklist, and linked it from `README.md`. A deeper source audit found that patches 0001–0079 are inherited from the Redmi Note 10 Pro / SM7150 port and include more Qualcomm platform assumptions; patch 0080 onward adapts that stack to topaz / SM6225. An A50 effort must replace both layers' board-specific CPU, interrupt, storage and display paths.
 
 The phone is attached to Windows as a Samsung USB CDC composite device (`VID_04E8&PID_685D`) and modem. Google Platform Tools 37.0.1 sees only `emulator-5554` in the offline state; `fastboot devices -l` is empty. The device is not exposed over ADB or fastboot, so its exact model, firmware and bootloader state are not yet confirmed. **No phone boot, flash or partition write was attempted.** Next: once the phone is in Android with USB debugging authorized (or its download-mode screen/label identifies it), record the exact model and firmware, then obtain matching stock boot/DT files. Do not use topaz images or flash commands on A50.
