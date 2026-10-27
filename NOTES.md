@@ -2,7 +2,9 @@
 
 ### >>> UPDATE 2026-10-27: Samsung Galaxy A50 request <<<
 
-The user asked to adapt `MakrSas/ios-topaz` for a Samsung Galaxy A50. This checkout is the `topaz` branch and remains a Redmi Note 12 4G / SM6225 port; it is not an A50 build. Added `PORTING-SAMSUNG-A50.md` with the verified hardware/boot-flow differences and a staged bring-up checklist, and linked it from `README.md`. No device was connected or booted, no kernel/image was built, and no tests were run. **Next:** confirm the exact A50 model code and firmware, then gather its stock DTB/DTBO and boot metadata before changing board code. Do not reuse topaz boot images or flash instructions on A50.
+The user asked to adapt `MakrSas/ios-topaz` for a Samsung Galaxy A50. This checkout is the `topaz` branch and remains a Redmi Note 12 4G / SM6225 port; it is not an A50 build. Added `PORTING-SAMSUNG-A50.md` with the hardware differences and a staged bring-up checklist, and linked it from `README.md`. A deeper source audit found that patches 0001–0079 are inherited from the Redmi Note 10 Pro / SM7150 port and include more Qualcomm platform assumptions; patch 0080 onward adapts that stack to topaz / SM6225. An A50 effort must replace both layers' board-specific CPU, interrupt, storage and display paths.
+
+The phone is attached to Windows as a Samsung USB CDC composite device (`VID_04E8&PID_685D`) and modem. Google Platform Tools 37.0.1 sees only `emulator-5554` in the offline state; `fastboot devices -l` is empty. The device is not exposed over ADB or fastboot, so its exact model, firmware and bootloader state are not yet confirmed. **No phone boot, flash or partition write was attempted.** Next: once the phone is in Android with USB debugging authorized (or its download-mode screen/label identifies it), record the exact model and firmware, then obtain matching stock boot/DT files. Do not use topaz images or flash commands on A50.
 
 ## Agent handoff / active work (2026-10-15, latest)
 
