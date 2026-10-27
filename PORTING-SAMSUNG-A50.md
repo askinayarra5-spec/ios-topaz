@@ -28,6 +28,17 @@ The A50's Exynos 9610 DTS maps the Cortex-A53 cluster to MPIDRs `0x0–0x3` and 
 
 The A50 XNU ADT must therefore advertise only the four A73 CPUs. If Samsung S-Boot starts the shim on an A53, an A50 shim must transfer execution to A73 MPIDR `0x100` with PSCI before entering XNU. The topaz shim already has an analogous A53-to-A73 handoff, but its GICv3, Qualcomm clock, UFS and framebuffer setup cannot be copied as an A50 implementation. This cluster mapping is from the public Samsung DTS; the connected phone's live `ID_AA64MMFR0_EL1` and S-Boot entry CPU have not been measured.
 
+## Experimental A50 ADT generator
+
+tools/mkadt.py now has an A50-only mode that consumes one raw stock FDT. Run:
+
+    python tools/a50-fdt-report.py STOCK.dtb
+    python tools/mkadt.py a50.adt --a50-fdt STOCK.dtb --a50-memory-bank INDEX
+
+The report numbers each FDT RAM range so the selected bank is explicit; replace INDEX with that number. The generator subtracts the FDT reservation table, fixed and dynamic /reserved-memory ranges, and the stock initrd range; it emits one remaining contiguous, 16 KB-aligned bank because the current XNU ADT path represents RAM as one base/size pair. It accepts only Cortex-A73 CPUs with PSCI, the first two GICv2 register ranges, and the generic timer's virtual PPI 27 expected by the current A50 XNU patch. Ambiguous or missing data stops generation. The generated ADT intentionally omits framebuffer and UFS nodes because their A50 drivers do not exist yet. The default TOPAZ and QEMU ADT modes retain their existing board values.
+
+No matching stock FDT has been obtained from the connected handset, so this generator has not produced an A50 ADT. The exact model's live memory reservations, GIC ranges, boot-time display state, and Samsung handoff remain unverified; this is a code milestone, not a bootable image.
+
 ## First-boot diagnostics and firmware access
 
 The [A50 Halium device notes](https://github.com/sadatdaniel/a50-halium/blob/main/device/samsung-a50/device-facts.md) report that enabling the generic Linux framebuffer console crashes against Samsung's DECON driver; its [historical diagnostics notes](https://github.com/sadatdaniel/a50-halium/blob/main/kernel/patches-historical/README.md) describe a period with no serial console or surviving log. Those findings are for its Linux port, but they mean the topaz framebuffer console cannot be assumed to work as an A50 shim diagnostic. The shim needs an independently verified DECON/retained-framebuffer path or another observable log channel before a blind boot attempt.

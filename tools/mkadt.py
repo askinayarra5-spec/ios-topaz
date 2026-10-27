@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-"""Build the minimal Apple Device Tree that the TOPAZ xnu needs to boot.
+"""Build an Apple Device Tree for TOPAZ or an experimental A50 boot.
 
-Only what the early boot path actually reads (see NOTES.md); every MMIO
-address comes from the topaz (Redmi Note 12 4G, SM6225 khaje) live FDT. Usage:  mkadt.py OUT.adt [--dump] [--qemu] [--highmem]
+The default path retains TOPAZ's existing values. The A50 path requires a raw
+stock FDT and derives RAM, CPUs, GIC and timer values from it.
 """
-import hashlib, os, struct, sys
+import argparse
+import hashlib
+import os
+import struct
+import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import adt  # noqa: E402
+from a50_fdt import (  # noqa: E402
+    cell_value, cells, integer, memory_ranges, node_cells, parse_fdt,
+    reg_ranges, reserved_memory_ranges, string_list, memreserve_ranges,
+)
 
 # Kernel-managed RAM: above every Qualcomm XPU carve-out (see NOTES.md)
 PHYS_BASE = 0xb0000000
@@ -253,11 +262,299 @@ def build(seed=None, qemu=False, highmem=False, native=False, midmem=False):
     ], [chosen, defaults, cpus, arm_io, fbcon, buttons] + product + ([] if qemu else [ufs]))
 
 
+def a50_ram_range(nodes, fdt_reservations, bank_index=None):
+    """Select one contiguous, unreserved FDT RAM range for XNU's ADT fields."""
+    banks = memory_ranges(nodes)
+    if not banks:
+        raise ValueError('FDT contains no top-level memory ranges')
+    for index, (_, address, size) in enumerate(banks):
+        if address + size > 1 << 64:
+            raise ValueError(f'FDT memory bank {index} overflows 64-bit physical addresses')
+        for other_index, (_, other_address, other_size) in enumerate(banks[:index]):
+            if address < other_address + other_size and other_address < address + size:
+                raise ValueError(f'FDT memory banks {other_index} and {index} overlap')
+
+    fixed, windows = reserved_memory_ranges(nodes)
+    reserved = list(fdt_reservations)
+    reserved.extend((address, size) for _, address, size in fixed + windows)
+    chosen = nodes.get('/chosen', {})
+    initrd_start_prop = chosen.get('linux,initrd-start')
+    initrd_end_prop = chosen.get('linux,initrd-end')
+    if initrd_start_prop is not None or initrd_end_prop is not None:
+        starts = cells(initrd_start_prop)
+        ends = cells(initrd_end_prop)
+        if not starts or not ends:
+            raise ValueError('FDT initrd start/end properties are incomplete')
+        initrd_start = cell_value(starts)
+        initrd_end = cell_value(ends)
+        if initrd_end < initrd_start:
+            raise ValueError('FDT initrd end precedes its start')
+        reserved.append((initrd_start, initrd_end - initrd_start + 1))
+
+    def free_parts(address, size):
+        end = address + size
+        clipped = sorted((max(address, start), min(end, start + length))
+                         for start, length in reserved
+                         if length > 0 and start < end and address < start + length)
+        merged = []
+        for start, stop in clipped:
+            if merged and start <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], stop))
+            else:
+                merged.append((start, stop))
+        parts = []
+        cursor = address
+        for start, stop in merged:
+            if start > cursor:
+                part_start = (cursor + 0x3fff) & ~0x3fff
+                part_end = start & ~0x3fff
+                if part_end > part_start:
+                    parts.append((part_start, part_end - part_start))
+            cursor = max(cursor, stop)
+        if cursor < end:
+            part_start = (cursor + 0x3fff) & ~0x3fff
+            part_end = end & ~0x3fff
+            if part_end > part_start:
+                parts.append((part_start, part_end - part_start))
+        return parts
+
+    if bank_index is None:
+        eligible = []
+        for index, (path, address, size) in enumerate(banks):
+            parts = free_parts(address, size)
+            if parts:
+                largest = max(size for _, size in parts)
+                eligible.append((index, path, largest))
+        if len(eligible) != 1:
+            choices = ', '.join(f'{index}:{path} (largest free 0x{size:x})'
+                                for index, path, size in eligible) or 'none'
+            raise ValueError(
+                'FDT has multiple or no usable RAM banks; choose one with '
+                f'--a50-memory-bank INDEX. Available: {choices}')
+        bank_index = eligible[0][0]
+    if bank_index < 0 or bank_index >= len(banks):
+        raise ValueError(f'--a50-memory-bank {bank_index} is outside 0..{len(banks) - 1}')
+
+    path, address, size = banks[bank_index]
+    parts = free_parts(address, size)
+    if not parts:
+        raise ValueError(f'FDT memory bank {bank_index} ({path}) is fully reserved')
+    parts.sort(key=lambda item: item[1], reverse=True)
+    if len(parts) > 1 and parts[0][1] == parts[1][1]:
+        raise ValueError(
+            f'FDT memory bank {bank_index} has equally sized free ranges; '
+            'the ADT format here can describe only one range')
+    return parts[0]
+
+
+def a50_cpus(nodes, timebase):
+    """Build only the Cortex-A73 CPU cluster, whose cores support 16 KB pages."""
+    cpus_node = nodes.get('/cpus')
+    if cpus_node is None:
+        raise ValueError('FDT has no /cpus node')
+    address_cells = integer(cpus_node.get('#address-cells'), 1)
+    if address_cells < 1 or address_cells > 2:
+        raise ValueError(f'unsupported /cpus #address-cells: {address_cells}')
+
+    psci = nodes.get('/psci', {})
+    psci_compatible = string_list(psci.get('compatible'))
+    psci_method = string_list(psci.get('method'))
+    psci_available = (any(value in ('arm,psci', 'arm,psci-0.2')
+                           for value in psci_compatible)
+                      and psci_method in (['smc'], ['hvc']))
+
+    candidates = []
+    for path, props in sorted(nodes.items()):
+        if not path.startswith('/cpus/cpu@') or path.count('/') != 2:
+            continue
+        compatible = string_list(props.get('compatible'))
+        status = string_list(props.get('status'))
+        if 'arm,cortex-a73' not in compatible or status not in ([], ['okay'], ['ok']):
+            continue
+        ids = cells(props.get('reg'))
+        if len(ids) < address_cells:
+            raise ValueError(f'{path} has an invalid MPIDR reg property')
+        mpidr = cell_value(ids[:address_cells])
+        enable = string_list(props.get('enable-method'))
+        if enable != ['psci'] or not psci_available:
+            raise ValueError(f'{path} does not have a verified PSCI CPU enable path')
+        candidates.append((mpidr, path))
+
+    candidates.sort()
+    mpidrs = [mpidr for mpidr, _ in candidates]
+    if len(mpidrs) != len(set(mpidrs)):
+        raise ValueError('FDT contains duplicate Cortex-A73 MPIDRs')
+    if not candidates or 0x100 not in mpidrs:
+        raise ValueError('FDT does not expose the expected Cortex-A73 boot MPIDR 0x100')
+    if any((mpidr >> 8) != 1 or (mpidr & 0xff) >= 8 for mpidr in mpidrs):
+        raise ValueError('FDT Cortex-A73 MPIDR is outside the A50 cluster layout')
+
+    cpu_nodes = []
+    for logical_id, (mpidr, _path) in enumerate(candidates):
+        core = mpidr & 0xff
+        cpu_nodes.append(node(f'cpu{logical_id}', [
+            ('AAPL,phandle', u32(logical_id + 1)),
+            ('device_type', cstr('cpu')),
+            ('compatible', cstr('qcom,kryo470') + cstr('arm,cortex-a73') + cstr('ARM,v8')),
+            ('reg', u32(mpidr)),
+            ('cpu-id', u32(logical_id)),
+            ('cluster-id', u32(1)),
+            ('cluster-type', u32(0)),
+            ('die-cluster-id', u32(mpidr >> 8)),
+            ('cluster-core-id', u32(core)),
+            ('l2-cache-id', u32(1)),
+            ('l3-cache-id', u32(0)),
+            ('state', cstr('running' if logical_id == 0 else 'stopped')),
+            ('timebase-frequency', u32(timebase)),
+            ('peripheral-frequency', u32(timebase)),
+            ('fixed-frequency', u32(timebase)),
+        ]))
+    return node('cpus', [
+        ('AAPL,phandle', u32(100)),
+        ('#address-cells', u32(1)),
+        ('#size-cells', u32(0)),
+    ], cpu_nodes)
+
+
+def build_a50(nodes, fdt_reservations, memory_bank=None):
+    """Build a minimal A50 ADT from values read from one stock raw FDT."""
+    ram_base, ram_size = a50_ram_range(nodes, fdt_reservations, memory_bank)
+
+    root_ac, root_sc = node_cells(nodes, '/', 2, 1)
+    gics = [(path, props) for path, props in nodes.items()
+            if props.get('interrupt-controller') is not None
+            and any('gic' in value.lower()
+                    for value in string_list(props.get('compatible')))]
+    if len(gics) != 1:
+        raise ValueError(f'expected one GIC interrupt-controller in FDT, found {len(gics)}')
+    gic_path, gic_props = gics[0]
+    gic_regs = reg_ranges(gic_props.get('reg'), root_ac, root_sc)
+    if len(gic_regs) < 2 or any(size == 0 for _, size in gic_regs[:2]):
+        raise ValueError(f'{gic_path} does not describe GICD and GICC register ranges')
+    (gicd, gicd_size), (gicc, gicc_size) = gic_regs[:2]
+    if any(value > 0xffffffff for base, size in ((gicd, gicd_size), (gicc, gicc_size))
+           for value in (base, base + size - 1)):
+        raise ValueError('A50 GIC register ranges do not fit the current 32-bit arm-io map')
+    # arm-io uses a nonzero translation base; derive a 16 MiB-aligned window
+    # containing the real GICD address read above.
+    soc_base = gicd & ~0x00ffffff
+    if soc_base == 0 or gicc < soc_base:
+        raise ValueError('cannot derive a nonzero arm-io base from the FDT GIC ranges')
+
+    timer = nodes.get('/timer', {})
+    if not any('arm,armv8-timer' in value for value in string_list(timer.get('compatible'))):
+        raise ValueError('FDT has no ARMv8 generic timer at /timer')
+    timebase = integer(timer.get('clock-frequency'))
+    if not timebase:
+        raise ValueError('/timer has no single-cell clock-frequency')
+    timer_irqs = cells(timer.get('interrupts'))
+    gic_irq_cells = integer(gic_props.get('#interrupt-cells'), -1)
+    if gic_irq_cells != 3 or len(timer_irqs) != 4 * gic_irq_cells:
+        raise ValueError('/timer interrupts do not contain the four expected GICv2 tuples')
+    virtual_irq = timer_irqs[2 * gic_irq_cells:3 * gic_irq_cells]
+    if virtual_irq[0] != 1 or virtual_irq[1] > 15:
+        raise ValueError('FDT virtual timer interrupt is not a GIC PPI')
+    timer_intid = 16 + virtual_irq[1]
+    if timer_intid != 27:
+        raise ValueError(
+            f'FDT virtual timer INTID is {timer_intid}, but the A50 XNU patch uses 27')
+
+    cpu_nodes = a50_cpus(nodes, timebase)
+    seed = os.urandom(64)
+    phandle = iter(range(200, 1000))
+    ph = lambda: ('AAPL,phandle', u32(next(phandle)))
+    chosen = node('chosen', [
+        ph(),
+        ('dram-base', u64(ram_base)),
+        ('dram-size', u64(ram_size)),
+        ('random-seed', seed),
+        ('debug-enabled', u32(1)),
+        ('firmware-version', cstr('a50-shim')),
+        ('system-firmware-version', cstr('a50-shim')),
+        ('boot-manifest-hash', BOOT_MANIFEST_HASH),
+        ('crypto-hash-method', cstr('sha2-384')),
+        ('display-scale', u32(3)),
+        ('unique-chip-id', struct.pack('<Q', SWEET_ECID)),
+        ('chip-id', u32(0x8015)),
+        ('certificate-production-status', u32(0)),
+        ('effective-production-status-ap', u32(0)),
+        ('certificate-security-mode', u32(1)),
+        ('effective-security-mode-sep', u32(1)),
+    ], [
+        node('memory-map', [ph()]),
+        node('asmb', [ph(), ('lp-sip0', u64(0x6f)), ('lp-sip1', u32(1))]),
+    ])
+
+    gic = node('gic', [
+        ph(),
+        ('compatible', cstr('arm,gic-v2') + gic_props['compatible']),
+        ('interrupt-controller', b''),
+        ('virtual-timer-intid', u32(timer_intid)),
+        ('reg', u64(gicd - soc_base, gicd_size, gicc - soc_base, gicc_size)),
+    ])
+    arm_io = node('arm-io', [
+        ph(),
+        ('device_type', cstr('sweet-io')),
+        ('compatible', cstr('sweet-io') + cstr('arm-io')),
+        ('#address-cells', u32(2)),
+        ('#size-cells', u32(2)),
+        ('ranges', u64(0, soc_base, 0x100000000 - soc_base)),
+    ], [gic, node('wdt', [ph(), ('no-pmu', u32(1))])])
+
+    defaults = node('defaults', [ph(), ('no-effaceable-storage', u32(1))])
+    buttons = node('buttons', [
+        ph(),
+        ('button-names', cstr('volup') + cstr('voldown') + cstr('hold')),
+        ('home-button-type', u32(2)),
+        ('opposed-power-vol-buttons', u32(1)),
+    ])
+    product_props = d22ap_product()
+    if product_props:
+        product_props = [(key, cstr('sRGB') if key == 'artwork-display-gamut' else value)
+                         for key, value in product_props]
+    product = [node('product', [ph()] + product_props)] if product_props else []
+    return node('device-tree', [
+        ph(),
+        ('compatible', cstr('D22AP') + cstr('iPhone10,3') + cstr('xiaomi,sweet')
+         + cstr('samsung,a50') + cstr('samsung,exynos9610') + cstr('AppleARM')),
+        ('model', cstr('iPhone10,3')),
+        ('target-type', cstr('D22')),
+        ('target-sub-type', cstr('D22AP')),
+        ('manufacturer', cstr('Apple Inc.')),
+        ('#address-cells', u32(2)),
+        ('#size-cells', u32(2)),
+    ], [chosen, defaults, cpu_nodes, arm_io, buttons] + product)
+
+
 if __name__ == '__main__':
-    root = build(qemu='--qemu' in sys.argv, highmem='--highmem' in sys.argv,
-                 native='--native' in sys.argv, midmem='--midmem' in sys.argv)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output', type=Path)
+    parser.add_argument('--dump', action='store_true')
+    parser.add_argument('--qemu', action='store_true')
+    parser.add_argument('--highmem', action='store_true')
+    parser.add_argument('--native', action='store_true')
+    parser.add_argument('--midmem', action='store_true')
+    parser.add_argument('--a50-fdt', type=Path,
+                        help='build an A50 ADT from one raw stock FDT blob')
+    parser.add_argument('--a50-memory-bank', type=int,
+                        help='zero-based FDT memory-range index shown by a50-fdt-report.py')
+    args = parser.parse_args()
+    try:
+        if args.a50_fdt:
+            if args.qemu or args.highmem or args.native or args.midmem:
+                parser.error('--a50-fdt cannot be combined with TOPAZ/QEMU memory flags')
+            fdt_blob = args.a50_fdt.read_bytes()
+            fdt_nodes = parse_fdt(fdt_blob)
+            root = build_a50(fdt_nodes, memreserve_ranges(fdt_blob), args.a50_memory_bank)
+        else:
+            if args.a50_memory_bank is not None:
+                parser.error('--a50-memory-bank requires --a50-fdt')
+            root = build(qemu=args.qemu, highmem=args.highmem,
+                         native=args.native, midmem=args.midmem)
+    except (OSError, ValueError, struct.error) as exc:
+        parser.error(str(exc))
     blob = adt.serialize(root)
-    open(sys.argv[1], 'wb').write(blob)
-    if '--dump' in sys.argv:
+    args.output.write_bytes(blob)
+    if args.dump:
         adt.dump(adt.parse(blob)[0])
-    print(f'{sys.argv[1]}: {len(blob)} bytes', file=sys.stderr)
+    print(f'{args.output}: {len(blob)} bytes', file=sys.stderr)

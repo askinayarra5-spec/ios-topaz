@@ -10,104 +10,11 @@ from __future__ import annotations
 
 import argparse
 import struct
+import sys
 from pathlib import Path
 
-
-FDT_MAGIC = 0xD00DFEED
-FDT_BEGIN_NODE, FDT_END_NODE, FDT_PROP, FDT_NOP, FDT_END = 1, 2, 3, 4, 9
-
-
-def parse_fdt(blob: bytes) -> dict[str, dict[str, bytes]]:
-    if len(blob) < 40:
-        raise ValueError("input is shorter than an FDT header")
-    (magic, total, struct_off, strings_off, _rsv_off, version, _last,
-     _boot_cpu, strings_size, struct_size) = struct.unpack_from(">10I", blob)
-    if magic != FDT_MAGIC or total < 40 or total > len(blob):
-        raise ValueError("input is not one valid raw FDT blob")
-    if struct_off + struct_size > total or strings_off + strings_size > total:
-        raise ValueError("FDT structure or strings block exceeds totalsize")
-
-    strings = blob[strings_off:strings_off + strings_size]
-    structure = blob[struct_off:struct_off + struct_size]
-    nodes: dict[str, dict[str, bytes]] = {}
-    stack: list[str] = []
-    pos = 0
-
-    while pos + 4 <= len(structure):
-        token = struct.unpack_from(">I", structure, pos)[0]
-        pos += 4
-        if token == FDT_BEGIN_NODE:
-            end = structure.find(b"\0", pos)
-            if end < 0:
-                raise ValueError("unterminated FDT node name")
-            name = structure[pos:end].decode("ascii", "replace")
-            pos = (end + 4) & ~3
-            path = (stack[-1].rstrip("/") + "/" + name) if stack else "/"
-            nodes[path] = {}
-            stack.append(path)
-        elif token == FDT_END_NODE:
-            if not stack:
-                raise ValueError("unbalanced FDT end-node token")
-            stack.pop()
-        elif token == FDT_PROP:
-            if not stack or pos + 8 > len(structure):
-                raise ValueError("invalid FDT property token")
-            length, nameoff = struct.unpack_from(">II", structure, pos)
-            pos += 8
-            if nameoff >= len(strings):
-                raise ValueError("FDT property name offset exceeds strings block")
-            end = nameoff
-            while end < len(strings) and strings[end] != 0:
-                end += 1
-            if end == len(strings) or pos + length > len(structure):
-                raise ValueError("FDT property exceeds its block")
-            name = strings[nameoff:end].decode("ascii", "replace")
-            nodes[stack[-1]][name] = structure[pos:pos + length]
-            pos = (pos + length + 3) & ~3
-        elif token == FDT_NOP:
-            continue
-        elif token == FDT_END:
-            return nodes
-        else:
-            raise ValueError(f"unknown FDT token {token} at structure offset {pos - 4}")
-    raise ValueError("FDT structure has no end token")
-
-
-def cells(value: bytes | None) -> list[int]:
-    if value is None or len(value) % 4:
-        return []
-    return list(struct.unpack(">" + "I" * (len(value) // 4), value))
-
-
-def integer(value: bytes | None, default: int = 0) -> int:
-    values = cells(value)
-    return values[0] if len(values) == 1 else default
-
-
-def strings(value: bytes | None) -> str:
-    if value is None:
-        return "-"
-    return ",".join(part.decode("ascii", "replace")
-                     for part in value.rstrip(b"\0").split(b"\0"))
-
-
-def reg_ranges(value: bytes | None, address_cells: int,
-               size_cells: int) -> list[tuple[int, int]]:
-    values = cells(value)
-    width = address_cells + size_cells
-    if not values or width < 2 or len(values) % width:
-        return []
-    result = []
-    for offset in range(0, len(values), width):
-        row = values[offset:offset + width]
-        address = 0
-        size = 0
-        for cell in row[:address_cells]:
-            address = (address << 32) | cell
-        for cell in row[address_cells:]:
-            size = (size << 32) | cell
-        result.append((address, size))
-    return result
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from a50_fdt import cells, integer, memory_ranges, parse_fdt, reg_ranges, strings  # noqa: E402
 
 
 def show_reg(value: bytes | None, address_cells: int,
@@ -124,13 +31,10 @@ def report(nodes: dict[str, dict[str, bytes]]) -> str:
     size_cells = integer(root.get("#size-cells"), 1)
     lines = [f"FDT root cells: address={address_cells}, size={size_cells}"]
 
-    total_memory = 0
-    for path, props in sorted(nodes.items()):
-        if path.count("/") != 1 or strings(props.get("device_type")) != "memory":
-            continue
-        regions = reg_ranges(props.get("reg"), address_cells, size_cells)
-        total_memory += sum(size for _, size in regions)
-        lines.append(f"MEMORY {path}: {show_reg(props.get('reg'), address_cells, size_cells)}")
+    banks = memory_ranges(nodes)
+    total_memory = sum(size for _, _, size in banks)
+    for index, (path, address, size) in enumerate(banks):
+        lines.append(f"MEMORY [{index}] {path}: 0x{address:x}+0x{size:x}")
     if total_memory:
         lines.append(f"MEMORY total described: 0x{total_memory:x} bytes")
 

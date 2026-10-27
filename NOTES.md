@@ -1,5 +1,11 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+### >>> UPDATE 2026-10-27: A50 FDT-driven ADT generator <<<
+
+Added an A50-only path to tools/mkadt.py and moved raw-FDT parsing to tools/a50_fdt.py, shared by tools/a50-fdt-report.py. The A50 path derives the selected RAM interval from the raw FDT after excluding its reserve map, reserved-memory ranges and stock initrd; it requires Cortex-A73 MPIDR 0x100, PSCI, GICD/GICC register ranges, and the virtual timer PPI 27 used by the current XNU patch. The report now numbers RAM ranges for the explicit --a50-memory-bank option. The A50 ADT omits UFS and display nodes because those hardware paths are not implemented. Existing TOPAZ/QEMU modes remain on their original builder.
+
+The connected phone still has no matching raw stock FDT available to this checkout, so no A50 ADT or boot image was produced. No tests were run. The phone remains in Android; no reboot, Download Mode transition, read or write to a block device, or flash was performed. Next: obtain a raw FDT from the matching A505FDDS9CWA1 firmware, run the report, select a free memory bank, then implement the A50 shim handoff and a usable diagnostic channel before any boot attempt.
+
 ### >>> UPDATE 2026-10-27: A50 boot-path safety findings <<<
 
 The A50 XNU artifact remains build-only. Arm's Cortex-A53 TRM gives `ID_AA64MMFR0_EL1.TGran16=0` (no 16 KB granule); the Cortex-A73 TRM gives `TGran16=1`. The public Exynos 9610 DTS maps A53 MPIDRs `0x0-0x3` and A73 MPIDRs `0x100-0x103`, so the A50 ADT must initially expose only the A73 cluster and the shim must use PSCI to hand off to `0x100` if S-Boot enters on an A53. Existing topaz shim logic has a similar CPU handoff, but its Qualcomm GICv3/clock/UFS/framebuffer setup is not reusable for Exynos. References are recorded in `PORTING-SAMSUNG-A50.md`.
