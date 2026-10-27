@@ -30,7 +30,7 @@ The A50 XNU ADT must therefore advertise only the four A73 CPUs. If Samsung S-Bo
 
 ## First-boot diagnostics and firmware access
 
-The local A50 Halium device notes report no usable serial console and that enabling the generic Linux framebuffer console crashes against Samsung's DECON driver. Those findings are for its Linux port, but they mean the topaz framebuffer console cannot be assumed to work as an A50 shim diagnostic. The shim needs an independently verified DECON/retained-framebuffer path or another observable log channel before a blind boot attempt.
+The [A50 Halium device notes](https://github.com/sadatdaniel/a50-halium/blob/main/device/samsung-a50/device-facts.md) report that enabling the generic Linux framebuffer console crashes against Samsung's DECON driver; its [historical diagnostics notes](https://github.com/sadatdaniel/a50-halium/blob/main/kernel/patches-historical/README.md) describe a period with no serial console or surviving log. Those findings are for its Linux port, but they mean the topaz framebuffer console cannot be assumed to work as an A50 shim diagnostic. The shim needs an independently verified DECON/retained-framebuffer path or another observable log channel before a blind boot attempt.
 
 The exact stock build is `A505FDDS9CWA1`, but no matching firmware archive or DTB has been acquired. Current public download routes either require an IMEI/serial for Samsung FUS access or have not yielded a direct archive. Do not submit the handset's identifiers to a third party; the connected shell also cannot read the protected live FDT or raw DTB block. The public kernel DTS remains a candidate reference, not a replacement for those artifacts.
 
@@ -49,7 +49,7 @@ The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a
 ## Bring-up sequence
 
 1. Confirm the phone's full model code (for example, `SM-A505F`) and stock firmware build. Record whether its bootloader is unlockable/unlocked. Keep the stock firmware and recovery available.
-2. From the matching stock firmware, collect the kernel, DTB/DTBO, boot image metadata, command line and partition map. Record CPU MPIDRs and `ID_AA64MMFR0` granule support, RAM ranges/reservations, GIC/timer addresses, and the boot-time framebuffer. Separate facts read from the device from values inferred from another A50 variant.
+2. From the matching stock firmware, collect the kernel, DTB/DTBO, boot image metadata, command line and partition map. Run `python tools/a50-fdt-report.py STOCK.dtb` on a raw FDT to list memory, CPU, PSCI, GIC, timer and splash/display properties; the report intentionally omits `chosen/bootargs` contents. Record CPU MPIDRs and `ID_AA64MMFR0` granule support, RAM ranges/reservations, GIC/timer addresses, and the boot-time framebuffer. Separate facts read from the device from values inferred from another A50 variant.
 3. Make an A50-only Apple Device Tree and a minimal shim handoff. First target CPU, timer, interrupt controller and logging; do not start the topaz display, touch, Wi-Fi, modem, GPU or battery drivers.
 4. Samsung has no verified `fastboot boot` route here. Before a Download Mode boot-image write, prepare and verify a full stock restore path; confirm the specific write with the user.
 5. Add storage, display, touch, keys and power drivers one at a time, using the A50 stock kernel/device tree and hardware captures as references. Keep any iOS root image off the phone until the storage driver and partition mapping are independently verified.
