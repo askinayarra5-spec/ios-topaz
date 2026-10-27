@@ -2,7 +2,7 @@
 
 ## Status
 
-The A50 XNU run `40613824506` at commit `22295b2` stopped during configuration generation with `doconf: Missing }`; no kernel was produced. The apparent syscall `unifdef` parse error in the log is part of an echoed shell recipe, not an emitted error. Patch `0951` had encoded the new `MASTER.arm64.a50` config as one line containing literal `\n` characters. That hunk is now corrected to create the intended 115-line file. SWEET control run `40612975629` passed at the same base commit. The corrected patch still needs an A50 Actions build. This remains a first XNU build step, not an A50 boot image.
+The corrected A50 XNU run `40614901309` passed on commit `517582a`. Its `kernel.development.a50` artifact is 18,035,312 bytes, SHA-256 `481b6b293662124593e3d80c1b30946bc22c7eb1f5a9f50b4abd4ac226874b3e`, and a little-endian Mach-O ARM64 kernel (`cputype 0x0100000c`, subtype 0). The preceding run `40613824506` failed because the A50 master config had literal `\n` characters; that patch-format error is fixed. SWEET run `40612975629` passed. This proves XNU compilation only; it has not run on the handset and is not a Samsung boot image.
 
 The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `exynos9610`, Android 11 build `A505FDDS9CWA1`, CSC `TUR`. Samsung's [release notice](https://doc.samsungmobile.com/SM-A505F/006810190531/eng.html) lists that same build and Android 11. Samsung lists an Exynos 9610, four 2.3 GHz plus four 1.7 GHz CPU cores, and a 1080x2340 Super AMOLED display for the A50. Public SM-A505F device work identifies the Exynos 9610's Cortex-A73/Cortex-A53 clusters, Mali-G72 MP3 GPU and Samsung S-Boot; that project also records no fastboot boot path. Sources: [Samsung A50 specifications](https://www.samsung.com/fr/support/mobile-devices/quelles-sont-les-caracteristiques-techniques-du-galaxy-a50/) and [A50 device base](https://github.com/sadatdaniel/a50-halium).
 
@@ -18,7 +18,7 @@ The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `e
 
 ## Experimental XNU target
 
-`xnu/patches/0951-a50-gicv2.patch` adds a separate `MACHINE_CONFIG=A50`, GICv2 MMIO interrupt handling, the candidate Exynos virtual-timer interrupt, and A50 CPU MPIDR handling. The XNU patch applies cleanly after the existing patch series in a scratch source tree. Its first GitHub Actions build failed before producing a kernel; its register layout is still based on public Samsung source, not the connected phone's live DT. The workflow now offers `A50` as a build choice.
+`xnu/patches/0951-a50-gicv2.patch` adds a separate `MACHINE_CONFIG=A50`, GICv2 MMIO interrupt handling, the candidate Exynos virtual-timer interrupt, and A50 CPU MPIDR handling. The A50 Actions workflow produced an ARM64 XNU kernel in run `40614901309`. GIC register layout and timer settings still come from public Samsung source, not the live DT from this phone. The artifact is a kernel only; it does not include an A50 shim, ADT, Samsung S-Boot handoff, Exynos UFS driver, DECON display driver, or iOS root image.
 
 The target does not include an A50 shim or ADT, Samsung boot handoff, Exynos UFS driver, or DECON display driver. It cannot produce an image suitable for this handset yet.
 
@@ -39,13 +39,13 @@ The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a
 1. Confirm the phone's full model code (for example, `SM-A505F`) and stock firmware build. Record whether its bootloader is unlockable/unlocked. Keep the stock firmware and recovery available.
 2. From the matching stock firmware, collect the kernel, DTB/DTBO, boot image metadata, command line and partition map. Record CPU MPIDRs and `ID_AA64MMFR0` granule support, RAM ranges/reservations, GIC/timer addresses, and the boot-time framebuffer. Separate facts read from the device from values inferred from another A50 variant.
 3. Make an A50-only Apple Device Tree and a minimal shim handoff. First target CPU, timer, interrupt controller and logging; do not start the topaz display, touch, Wi-Fi, modem, GPU or battery drivers.
-4. Validate a return-to-recovery path and a RAM-only boot route before adding persistent storage support. Samsung's boot flow differs from the `fastboot boot` command in this repository.
+4. Samsung has no verified `fastboot boot` route here. Before a Download Mode boot-image write, prepare and verify a full stock restore path; confirm the specific write with the user.
 5. Add storage, display, touch, keys and power drivers one at a time, using the A50 stock kernel/device tree and hardware captures as references. Keep any iOS root image off the phone until the storage driver and partition mapping are independently verified.
 6. Only after the board drivers work, adjust the presented device identity and resolution, then attempt the iPhone X iOS 16 userland.
 
 ## Current boundary
 
-The work in this checkout includes an Android boot-image repacker and the first experimental A50 XNU patch, in addition to the hardware assessment. There is still no A50 ADT, shim, compiled kernel image or device boot result. The repository's existing topaz instructions remain valid only for the Redmi Note 12 4G. No A50 image should be flashed or booted from this tree.
+The work in this checkout includes an Android boot-image repacker, an experimental A50 XNU patch and a CI-built ARM64 XNU kernel. There is still no A50 ADT, shim, Exynos UFS/display support, Samsung boot handoff validation or iOS root image, and the kernel has not been run on the device. The repository's existing topaz instructions remain valid only for the Redmi Note 12 4G. Do not flash this standalone kernel.
 
 ## Live connected-device inspection (2026-10-27)
 
