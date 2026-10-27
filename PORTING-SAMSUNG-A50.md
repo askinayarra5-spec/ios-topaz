@@ -16,6 +16,18 @@ The first likely target is the Exynos 9610 variant, commonly sold as SM-A505F/SM
 | `sweet_ufs.c` talks to the topaz Qualcomm UFS host at `0x4804000`, and the install guide writes the iOS image to topaz `userdata`. | Identify the A50 UFS controller and partition map from the exact stock firmware. Do not reuse the topaz block device, offsets, or `userdata` flash command. |
 | Display setup assumes a 1080x2400 topaz panel and its Qualcomm MDP. | Add an Exynos display pipeline and the A50's 1080x2340 panel timing before expecting the iOS UI to appear. |
 
+## Candidate hardware facts from Samsung's A50 kernel source
+
+The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a50/kernel-source-9610/tree/master/arch/arm64/boot/dts/exynos) gives useful starting points. These are source-tree values, **not yet read from the connected handset**, and must be checked against its exact model, live DT and firmware before use.
+
+| Area | Candidate from the source tree | Port implication |
+| --- | --- | --- |
+| CPUs | Cortex-A53 MPIDRs `0x0–0x3`; Cortex-A73 MPIDRs `0x100–0x103`; PSCI CPU enable | The A73 cluster IDs resemble topaz, but verify the running CPU, PSCI availability and 16K translation support on this handset. |
+| Interrupts and timer | GICv2-compatible controller around `0x12301000–0x12306000`; ARMv8 generic timer at 26 MHz | The current XNU patches initialize Qualcomm GICv3. A50 needs an Exynos/GICv2 path and its timer rate. |
+| Storage | Samsung Exynos UFS host at `0x13520000`, with controller-specific vendor and PHY ranges | Replace the Qualcomm UFS register protocol; confirm the installed partition table before adding a root-device path. |
+| Display | Exynos DECON/DSIM; EA8076 panel, MIPI command mode, 1080x2340 at 60 Hz | The topaz MDP scanout and its 1080x2400 buffer are not reusable. |
+| Touch | The A505 common tree describes Melfas MMS at I2C `0x48`; an SWA-open overlay describes Imagis IST40xx at `0x50` | Identify the handset's touch IC from its live DT or stock firmware instead of choosing one by model family. |
+
 ## Bring-up sequence
 
 1. Confirm the phone's full model code (for example, `SM-A505F`) and stock firmware build. Record whether its bootloader is unlockable/unlocked. Keep the stock firmware and recovery available.

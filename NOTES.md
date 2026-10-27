@@ -6,6 +6,8 @@ The user asked to adapt `MakrSas/ios-topaz` for a Samsung Galaxy A50. This check
 
 The phone is attached to Windows as a Samsung USB CDC composite device (`VID_04E8&PID_685D`) and modem. Google Platform Tools 37.0.1 sees only `emulator-5554` in the offline state; `fastboot devices -l` is empty. The device is not exposed over ADB or fastboot, so its exact model, firmware and bootloader state are not yet confirmed. **No phone boot, flash or partition write was attempted.** Next: once the phone is in Android with USB debugging authorized (or its download-mode screen/label identifies it), record the exact model and firmware, then obtain matching stock boot/DT files. Do not use topaz images or flash commands on A50.
 
+Candidate data from the public A505F Exynos 9610 DTS is now captured in `PORTING-SAMSUNG-A50.md`: A53 MPIDRs `0–3`, A73 MPIDRs `0x100–0x103`, GICv2 register region around `0x12301000`, 26 MHz generic timer, Exynos UFS at `0x13520000`, DECON/DSIM + EA8076 panel, and touch variants (Melfas MMS `0x48` vs Imagis IST40xx `0x50`). These are source-tree candidates only, not confirmed for the connected handset. The official Heimdall 1.4.0 Windows archive was unpacked under `.cache`, but its CLI cannot start because the Visual C++ 2012 runtime is absent; `detect` and `print-pit` did not run. No driver was installed and no USB flashing command was issued.
+
 ## Agent handoff / active work (2026-10-15, latest)
 
 ### >>> UPDATE 2026-10-18 (read first, then the 10-17 handoff below) <<<
