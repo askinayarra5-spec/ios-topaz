@@ -1,5 +1,11 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+### >>> UPDATE 2026-10-27: GitHub A50 build attempt <<<
+
+The user's GitHub device login was activated. The authenticated account has a writable fork at `askinayarra5-spec/ios-topaz`; all pushes stay on that fork, not `MakrSas/ios-topaz`. A50 XNU workflow run `40608960476` (`MACHINE_CONFIG=A50`, macOS 13.5, DEVELOPMENT) completed with failure in the XNU `Build` step. The log reports `Parse failure for .../bsd/kern/syscalls.master` from `unifdef`; the `xnu-kernel` artifact contains no kernel (the downloaded `SHA256SUMS` is empty). The `xnu-buildtree` artifact was downloaded to the system temp folder for diagnosis. Standard `SWEET` run `40609838190` also failed at the same `syscalls.master` parse step, before a kernel was produced. The shared `0070-sweet-pid-hibernate.patch` condition has been split into nested `#ifdef` blocks; a follow-up SWEET build is needed to confirm the parser issue is fixed before retrying A50.
+
+The current ADB session sees one authorized device. Read-only properties confirm `SM-A505F`, Android 11, `ro.boot.flash.locked=0`, and verified boot state `orange`; fastboot sees no device. The ADB serial is omitted. No reboot to Download Mode, boot, partition read, flash, or write was performed. No A50 kernel, ADT, shim, UFS/display support, or iOS root image is available, so the phone cannot be booted from this build yet.
+
 ### >>> UPDATE 2026-10-27: Samsung Galaxy A50 request <<<
 
 ### >>> UPDATE 2026-10-27: first experimental A50 XNU target <<<

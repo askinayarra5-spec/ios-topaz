@@ -2,7 +2,7 @@
 
 ## Status
 
-This repository does **not** boot on the Samsung Galaxy A50. Its working target remains the Redmi Note 12 4G (`topaz`, Qualcomm SM6225). There is now an experimental XNU `A50` machine configuration and an initial GICv2 interrupt/timer patch, but they have not been compiled or run on the phone. This is a first kernel port step, not an A50 boot image.
+This repository does **not** boot on the Samsung Galaxy A50. Its working target remains the Redmi Note 12 4G (`topaz`, Qualcomm SM6225). The experimental XNU `A50` machine configuration and initial GICv2 interrupt/timer patch have not produced a kernel or been run on the phone. GitHub Actions run `40608960476` failed in XNU's `Build` step while processing `bsd/kern/syscalls.master` (`unifdef` parse failure); its kernel artifact had no kernel file. Standard `SWEET` run `40609838190` failed at the same parse step, showing this failure occurs before A50-specific code. The shared `0070-sweet-pid-hibernate.patch` condition is now split into nested `#ifdef` blocks; a follow-up build must confirm the fix. This is a first kernel port step, not an A50 boot image.
 
 The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `exynos9610`, Android 11 build `A505FDDS9CWA1`, CSC `TUR`. Samsung's [release notice](https://doc.samsungmobile.com/SM-A505F/006810190531/eng.html) lists that same build and Android 11. Samsung lists an Exynos 9610, four 2.3 GHz plus four 1.7 GHz CPU cores, and a 1080x2340 Super AMOLED display for the A50. Public SM-A505F device work identifies the Exynos 9610's Cortex-A73/Cortex-A53 clusters, Mali-G72 MP3 GPU and Samsung S-Boot; that project also records no fastboot boot path. Sources: [Samsung A50 specifications](https://www.samsung.com/fr/support/mobile-devices/quelles-sont-les-caracteristiques-techniques-du-galaxy-a50/) and [A50 device base](https://github.com/sadatdaniel/a50-halium).
 
@@ -18,7 +18,7 @@ The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `e
 
 ## Experimental XNU target
 
-`xnu/patches/0951-a50-gicv2.patch` adds a separate `MACHINE_CONFIG=A50`, GICv2 MMIO interrupt handling, the candidate Exynos virtual-timer interrupt, and A50 CPU MPIDR handling. The XNU patch applies cleanly after the existing patch series in a scratch source tree. It has not passed a GitHub Actions build yet and its register layout is still based on public Samsung source, not the connected phone's live DT. The workflow now offers `A50` as a build choice.
+`xnu/patches/0951-a50-gicv2.patch` adds a separate `MACHINE_CONFIG=A50`, GICv2 MMIO interrupt handling, the candidate Exynos virtual-timer interrupt, and A50 CPU MPIDR handling. The XNU patch applies cleanly after the existing patch series in a scratch source tree. Its first GitHub Actions build failed before producing a kernel; its register layout is still based on public Samsung source, not the connected phone's live DT. The workflow now offers `A50` as a build choice.
 
 The target does not include an A50 shim or ADT, Samsung boot handoff, Exynos UFS driver, or DECON display driver. It cannot produce an image suitable for this handset yet.
 
