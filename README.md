@@ -14,7 +14,7 @@ As of **2026-10-20** the phone boots to the **iOS home screen** on the four Cort
 
 > Experimental bring-up, not a usable phone OS. Many things are missing or stubbed, and Apple's security model is mostly switched off. It installs into the `userdata` partition and so **erases Android's user data**. Nothing is flashed to the boot partitions; the kernel is started from RAM with `fastboot boot`.
 
-> **Samsung Galaxy A50 is not a supported target.** The boot shim, Apple Device Tree, XNU patches and hardware drivers here are specific to the Redmi Note 12 4G (`topaz`). An A50 build needs a separate Exynos 9610 board port and Samsung boot flow. See [PORTING-SAMSUNG-A50.md](PORTING-SAMSUNG-A50.md) for the current assessment and bring-up checklist. Do not use the `topaz` image or flashing instructions on an A50.
+> **Samsung Galaxy A50 is not a bootable target yet.** An experimental XNU `A50` machine configuration and first GICv2 interrupt patch are in progress, but there is no A50 kernel image, Apple Device Tree, shim or storage/display support. The remaining boot flow is Samsung S-Boot, not Xiaomi `fastboot boot`. Do not use the `topaz` image or flashing instructions on an A50. See [PORTING-SAMSUNG-A50.md](PORTING-SAMSUNG-A50.md) for status.
 
 ## What works
 

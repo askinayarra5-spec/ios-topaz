@@ -1,0 +1,368 @@
+diff --git a/config/MASTER.arm64.a50 b/config/MASTER.arm64.a50
+new file mode 100644
+index 0000000..9f24f95
+--- /dev/null
++++ b/config/MASTER.arm64.a50
+@@ -0,0 +1 @@
++#\n# A50 (Samsung Galaxy A50, Exynos 9610): MASTER.arm64.MacOSX plus the open-source\n# arm64 assembly and pmap (nos_arm_asm, nos_arm_pmap). Apple's own SoC configs\n# link those from the KDK's closed lib<SOC>.os.<CONFIG>.a instead, which is\n# arm64e and Apple-silicon specific. kperf/kpc stay (xnu does not build without\n# kperf); osfmk/arm64/kpc.c is a stub with no hardware counters.\n#\n#\n# Mach Operating System\n# Copyright (c) 1986 Carnegie-Mellon University\n# Copyright 2001-2018 Apple Inc.\n#\n# All rights reserved.  The CMU software License Agreement\n# specifies the terms and conditions for use and redistribution.\n#\n######################################################################\n#\n#  Master Apple configuration file (see the master machine independent\n#  configuration file for a description of the file format).\n#\n######################################################################\n#\n#  Standard Apple OS Configurations:\n#  -------- ----- -- ---------------\n#\n#  KERNEL_BASE =    [ arm64 config_pmap_ppl medium msgb_large config_requires_u32_munging config_delay_idle_sleep config_proc_udata_storage config_uexc config_darkboot nos_arm_asm nos_arm_pmap ]\n#  KERNEL_RELEASE = [ KERNEL_BASE ]\n#  KERNEL_DEV =     [ KERNEL_BASE development mach_assert config_xnupost proc_ref_debug config_proc_resource_limits ]\n#  KERNEL_DEBUG =   [ KERNEL_BASE debug mach_assert config_xnupost config_waitq_stats config_workloop_debug config_proc_resource_limits ]\n#  BSD_BASE =       [ mach_bsd sysv_sem sysv_msg sysv_shm config_netboot config_imageboot psynch config_proc_uuid_policy config_coredump pgo config_personas ]\n#  BSD_RELEASE =    [ BSD_BASE ]\n#  BSD_DEV =        [ BSD_BASE config_vnguard ]\n#  BSD_DEBUG =      [ BSD_BASE config_vnguard ]\n#  FILESYS_BASE =   [ devfs fdesc fifo mockfs sweet_hfs fs_compression config_protect config_mnt_rootsnap config_rosv_startup config_mount_vm config_mount_prebootrecovery config_basesystemroot config_fse quota namedstreams config_imgsrc_access config_triggers config_searchfs config_volfs config_appledouble nullfs bindfs config_mnt_suid config_firmlinks config_dataless_files config_union_mounts config_file_leases ]\n#  FILESYS_RELEASE= [ FILESYS_BASE ]\n#  FILESYS_DEV =    [ FILESYS_BASE config_iocount_trace ]\n#  FILESYS_DEBUG =  [ FILESYS_BASE config_iocount_trace ]\n#  NFS =            [ nfsserver ]\n#  SKYWALK_BASE =   [ skywalk config_nexus_user_pipe config_nexus_kernel_pipe config_nexus_monitor config_nexus_flowswitch config_nexus_netif ]\n#  SKYWALK_RELEASE = [ SKYWALK_BASE ]\n#  SKYWALK_DEV =    [ SKYWALK_BASE ]\n#  SKYWALK_DEBUG =  [ SKYWALK_BASE ]\n#  NETWORKING =     [ inet bpfilter dummynet traffic_mgt sendfile ah_all_crypto bond vlan gif stf ifnet_input_chk config_mbuf_jumbo if_bridge MULTIPATH if_fake remote_vif ]\n#  NETWORKING_RELEASE = [ NETWORKING ]\n#  NETWORKING_DEV = [ NETWORKING_RELEASE packet_mangler if_headless ]\n#  NETWORKING_DEBUG = [ NETWORKING_DEV ]\n#  VPN =            [ ipsec flow_divert necp content_filter ]\n#  PF =             [ pf pflog ]\n#  MULTIPATH =      [ multipath mptcp ]\n#if SOC_CONFIG_t8020 || SOC_IS_VIRTUALIZED\n#  HIBERNATION =    [ ]\n#else /*!(SOC_CONFIG_t8020 || SOC_IS_VIRTUALIZED)*/\n#  HIBERNATION =    [ ]\n#endif /*SOC_CONFIG_t8020 || SOC_IS_VIRTUALIZED*/\n#  IOKIT_BASE =     [ iokit iokitcpp no_kernel_hid config_sleep iokitstats HIBERNATION ]\n#  IOKIT_RELEASE =  [ IOKIT_BASE ]\n#  IOKIT_DEV =      [ IOKIT_BASE iotracking ]\n#  IOKIT_DEBUG =    [ IOKIT_BASE iotracking ]\n#  LIBKERN_BASE =   [ libkerncpp config_blocks config_kec_fips crypto_sha2 config_img4 ]\n#  LIBKERN_RELEASE =[ LIBKERN_BASE zlib ]\n#  LIBKERN_DEV =    [ LIBKERN_BASE zlib iotracking ]\n#  LIBKERN_DEBUG =  [ LIBKERN_BASE zlib iotracking ]\n#  PERF_DBG_BASE =  [ config_dtrace mach_kdp config_serial_kdp kdp_interactive_debugging config_kdp_coredump_encryption config_pervasive_energy PERFMON_BASE kperf kpc ]\n#  PERF_DBG_RELEASE=[ PERF_DBG_BASE ist_kdebug ]\n#  PERF_DBG_DEV =   [ PERF_DBG_BASE lock_stats zleaks alternate_debugger sched_hygiene_debug config_debug_syscall_rejection config_iotrace ]\n#  PERF_DBG_DEBUG = [ PERF_DBG_BASE lock_stats zleaks alternate_debugger sched_hygiene_debug config_debug_syscall_rejection config_iotrace ]\n#if SOC_IS_VIRTUALIZED\n#  PARAVIRT_BASE =  [ config_pv_ticket ]\n#else\n#  PARAVIRT_BASE =  [ ]\n#endif /*SOC_IS_VIRTUALIZED*/\n#  MACH_BASE =      [ mach config_ecc_logging vc_progress_white importance_inheritance config_atm config_coalitions config_iosched config_sysdiagnose config_telemetry config_mach_bridge_recv_time config_quiesce_counter config_arm_pfz config_user_notification phys_write_acct config_service_port_info config_voucher_deprecated PARAVIRT_BASE config_ledger_interval_max ]\n#  MACH_RELEASE =   [ MACH_BASE ]\n#  MACH_DEV =       [ MACH_BASE config_io_accounting importance_trace ]\n#  MACH_DEBUG =     [ MACH_BASE config_io_accounting importance_trace importance_debug ]\n#  SCHED_BASE =     [ config_sched_traditional config_sched_multiq config_sched_deferred_ast config_clutch config_sched_sfi config_sched_auto_join config_preadopt_tg ]\n#  SCHED_RELEASE =  [ SCHED_BASE ]\n#  SCHED_DEV =      [ SCHED_BASE ]\n#  SCHED_DEBUG =    [ SCHED_BASE config_sched_grrr config_sched_proto ]\n#  VM_BASE =        [ vm_pressure_events memorystatus config_code_decryption encrypted_swap config_deferred_reclaim ]\n#  VM_RELEASE =     [ VM_BASE ]\n#  VM_DEV =         [ VM_BASE dynamic_codesigning pgzalloc ]\n#  VM_DEBUG =       [ VM_BASE dynamic_codesigning pgzalloc ]\n#  VM_KASAN =       [ VM_BASE dynamic_codesigning config_kasan config_ubsan config_kcov config_ksancov kernel_tbi ]\n#  SECURITY =       [ config_macf config_audit kernel_integrity config_csr config_csr_from_dt config_setuid config_kas_info config_secure_bsd_root config_arcade config_supplemental_signatures second_static_trust_cache reslide_shared_cache ]\n#  BASE =           [ PF VPN SECURITY NFS ]\n#  RELEASE =        [ BASE KERNEL_RELEASE BSD_RELEASE FILESYS_RELEASE SKYWALK_RELEASE NETWORKING_RELEASE IOKIT_RELEASE LIBKERN_RELEASE    PERF_DBG_RELEASE MACH_RELEASE SCHED_RELEASE VM_RELEASE ]\n#  DEVELOPMENT =    [ BASE KERNEL_DEV     BSD_DEV     FILESYS_DEV     SKYWALK_DEV     NETWORKING_DEV     IOKIT_DEV     LIBKERN_DEV        PERF_DBG_DEV     MACH_DEV     SCHED_DEV     VM_DEV     ]\n#  DEBUG =          [ BASE KERNEL_DEBUG   BSD_DEBUG   FILESYS_DEBUG   SKYWALK_DEBUG   NETWORKING_DEBUG   IOKIT_DEBUG   LIBKERN_DEBUG      PERF_DBG_DEBUG   MACH_DEBUG   SCHED_DEBUG   VM_DEBUG   ]\n#  KASAN =          [ BASE KERNEL_DEV     BSD_DEV     FILESYS_DEV     SKYWALK_DEV     NETWORKING_DEV     IOKIT_DEV     LIBKERN_DEV        PERF_DBG_DEV     MACH_DEV     SCHED_DEV     VM_KASAN   ]\n#\n######################################################################\n#\nmachine		"arm64"						# <arm64>\n\nmakeoptions	OSFMK_MACHINE = "arm64"				# <mach>\n\noptions		COUNT_SYSCALLS		# count bsd system calls 	# <countcalls>\noptions     TRASH_VFP_ON_SAVE   # <debug,trash_vfp>\noptions		ALTERNATE_DEBUGGER	# <alternate_debugger>\n\noptions   CONFIG_VNODES=1024		# <xsmall>\n\noptions   CONFIG_FREEZE_SUSPENDED_MIN=4		# <xsmall>\n\noptions	  CONFIG_MACH_APPROXIMATE_TIME\n\noptions   CONFIG_KERNEL_INTEGRITY		# <kernel_integrity>\n\noptions CONFIG_MACF_LAZY_VNODE_LABELS   # Turn on labels, don't preallocate\n\noptions CONFIG_HYPERVISOR_PUBLIC   # unrestricted entitlement for hypervisor\n\noptions   CONFIG_RESLIDE_SHARED_CACHE		# <reslide_shared_cache>\noptions   CONFIG_KERNEL_TBI		# <kernel_tbi>\n
+\ No newline at end of file
+diff --git a/iokit/Kernel/arm/SweetCPU.cpp b/iokit/Kernel/arm/SweetCPU.cpp
+index 96c557b..e920720 100644
+--- a/iokit/Kernel/arm/SweetCPU.cpp
++++ b/iokit/Kernel/arm/SweetCPU.cpp
+@@ -82,7 +82,15 @@ SweetCPU::start(IOService *provider)
+ 	if (!IOCPU::start(provider)) {
+ 		return false;
+ 	}
++	#if defined(A50_GIC_V2)
++	if (cpu->phys_id & 0x100) {
++		cpuName = OSSymbol::withCStringNoCopy("Cortex-A73");
++	} else {
++		cpuName = OSSymbol::withCStringNoCopy("Cortex-A53");
++	}
++	#else
+ 	cpuName = OSSymbol::withCStringNoCopy("Kryo 260");
++	#endif
+ 	if (cpuName == NULL) {
+ 		return false;
+ 	}
+@@ -144,14 +152,13 @@ SweetCPU::startAll(void *arg __unused, wait_result_t result __unused)
+ 		}
+ 		IOSleep(1);
+ 	}
+-	/*
+-	 * topaz: the ADT lists only the A73 (gold) cores and the shim boots xnu
+-	 * on gold CPU 0x100 (the silver cluster has no 16K granule).
+-	 */
++#if !defined(A50_GIC_V2)
++	/* topaz: the ADT lists only the A73 cores and boots XNU on MPIDR 0x100. */
+ 	if (topology->boot_cpu->cpu_id != 0 || topology->boot_cpu->phys_id != 0x100) {
+ 		panic("SWEET CPU: expected boot MPIDR 0x100 and logical CPU 0, got 0x%x/%u",
+ 		    topology->boot_cpu->phys_id, topology->boot_cpu->cpu_id);
+ 	}
++#endif
+ 	for (unsigned int i = 0; i < topology->num_cpus; i++) {
+ 		SweetCPU *cpu = __atomic_load_n(&sweet_cpus[i], __ATOMIC_ACQUIRE);
+ 		kern_return_t kr = processor_start(cpu->machProcessor);
+@@ -224,12 +231,16 @@ SweetCPU::signalCPU(IOCPU *target)
+ 	if (aff0 >= 16) {
+ 		panic("SWEET CPU: SGI target requires unsupported range selector");
+ 	}
++	#if defined(A50_GIC_V2)
++	pe_a50_gicv2_send_sgi((uint32_t)mpidr);
++	#else
+ 	uint64_t sgi = (((mpidr >> 32) & 0xff) << 48) |
+ 	    (((mpidr >> 16) & 0xff) << 32) |
+ 	    (((mpidr >> 8) & 0xff) << 16) |
+ 	    ((uint64_t)SWEET_IPI_SGI << 24) | (1ULL << aff0);
+ 	__builtin_arm_dsb(DSB_ISHST);
+ 	__builtin_arm_wsr64("ICC_SGI1R_EL1", sgi);
++	#endif
+ 	__builtin_arm_isb(ISB_SY);
+ }
+ 
+diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
+index 943a1a5..7225984 100644
+--- a/makedefs/MakeInc.def
++++ b/makedefs/MakeInc.def
+@@ -29,7 +29,7 @@ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
+ else ifneq ($(findstring _host,$(RC_ProjectName)),)
+ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
+ else
+-SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET
++SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET A50
+ 
+ endif
+ 
+@@ -64,6 +64,7 @@ MACHINE_FLAGS_ARM64_BCM2837 = -DARM64_BOARD_CONFIG_BCM2837
+ # topaz: Cortex-A53/A73 are ARMv8.0 (no LSE atomics, RCpc, PAN or FP16). An explicit
+ # -mcpu: -arch arm64 otherwise keeps clang's apple-m1 default and its LSE/RCpc features
+ MACHINE_FLAGS_ARM64_SWEET = -DARM64_BOARD_CONFIG_SWEET                -mcpu=cortex-a53 $(if $(filter 1,$(TOPAZ_4K)),-DTOPAZ_4K=1)
++MACHINE_FLAGS_ARM64_A50 = -DARM64_BOARD_CONFIG_A50 -DARM64_BOARD_CONFIG_SWEET -mcpu=cortex-a53
+ 
+ 
+ #
+@@ -262,8 +263,8 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
+ # Without embdedded device map, use a default arch string
+ export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := $(shell echo $(CURRENT_ARCH_CONFIG) | tr A-Z a-z)
+ ifneq ($(filter arm64,$(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG)),)
+-# sweet's Cortex-A76/A55 have no pointer authentication: stay plain arm64
+-ifneq ($(CURRENT_MACHINE_CONFIG),SWEET)
++# SWEET and A50 are generic ARMv8 targets without pointer authentication.
++ifeq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A50),)
+ export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := arm64e
+ endif
+ endif
+diff --git a/osfmk/arm64/machine_routines.c b/osfmk/arm64/machine_routines.c
+index a1f2a91..a816b1f 100644
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -1087,7 +1087,11 @@ ml_parse_cpu_topology(void)
+ 		}
+ #endif
+ 
+-#if defined(SWEET)
++#if defined(A50_GIC_V2)
++		/* MPIDR Aff0 is the core index; Aff1 selects the A53/A73 cluster. */
++		cpu->die_cluster_id = (int)ml_readprop(child, "die-cluster-id", 0);
++		cpu->cluster_core_id = (int)ml_readprop(child, "cluster-core-id", cpu->phys_id & 0xff);
++#elif defined(SWEET)
+ 		/* Aff1 encodes the core on SM7150, not an Apple cluster ID. */
+ 		cpu->die_cluster_id = (int)ml_readprop(child, "die-cluster-id", 0);
+ 		cpu->cluster_core_id = (int)ml_readprop(child, "cluster-core-id", cpu->phys_id >> 8);
+diff --git a/osfmk/arm64/sleh.c b/osfmk/arm64/sleh.c
+index a2a8c1b..9548c91 100644
+--- a/osfmk/arm64/sleh.c
++++ b/osfmk/arm64/sleh.c
+@@ -1934,7 +1934,37 @@ sleh_irq(arm_saved_state_t *state)
+ #endif
+ 
+ 
+-#if defined(SWEET)
++#if defined(A50_GIC_V2)
++	/* Exynos GICv2: timer and IPIs arrive through the MMIO CPU interface. */
++	uint32_t iar = pe_a50_gicv2_ack();
++	uint32_t intid = iar & 0x3ff;
++	if (intid >= 1020 && intid <= 1023) {
++		return; /* spurious */
++	}
++	if (intid == A50_VTIMER_INTID) {
++		sleh_interrupt_handler_prologue(state, DBG_INTR_TYPE_TIMER);
++		cdp->cpu_decrementer = -1;
++		INTERRUPT_MASKED_DEBUG_START(rtclock_intr, DBG_INTR_TYPE_TIMER);
++		rtclock_intr(TRUE);
++		INTERRUPT_MASKED_DEBUG_END();
++		pe_a50_gicv2_eoi(iar);
++	} else if (intid == A50_IPI_SGI) {
++		sleh_interrupt_handler_prologue(state, DBG_INTR_TYPE_IPI);
++		pe_a50_gicv2_eoi(iar);
++		__builtin_arm_isb(ISB_SY);
++		cpu_signal_handler();
++	} else {
++		sleh_interrupt_handler_prologue(state, DBG_INTR_TYPE_OTHER);
++		if (cdp->interrupt_handler) {
++			cdp->interrupt_handler(cdp->interrupt_target,
++			    cdp->interrupt_refCon,
++			    cdp->interrupt_nub,
++			    intid);
++		}
++		pe_a50_gicv2_eoi(iar);
++	}
++	__builtin_arm_isb(ISB_SY);
++#elif defined(SWEET)
+ 	/*
+ 	 * sweet: TrustZone owns GIC Group 0, so the timer and IPIs that other
+ 	 * ARM64 targets take as FIQs arrive here as Group 1 IRQs.
+diff --git a/pexpert/arm/pe_fiq.c b/pexpert/arm/pe_fiq.c
+index 6089db9..c50c6e1 100644
+--- a/pexpert/arm/pe_fiq.c
++++ b/pexpert/arm/pe_fiq.c
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include <stdint.h>
++#include <libkern/libkern.h>
+ #include <libkern/section_keywords.h>
+ #include <arm64/proc_reg.h>
+ #include <kern/clock.h>
+@@ -222,6 +223,113 @@ pe_init_fiq()
+ 	__builtin_arm_isb(ISB_SY);
+ #endif /* SWEET */
+ }
++#elif defined(A50_GIC_V2)
++/*
++ * Exynos 9610 exposes a GICv2 distributor and a memory-mapped, banked CPU
++ * interface. /arm-io/gic/reg contains <GICD offset, size, GICC offset, size>
++ * relative to the SoC base, matching the compact ADT generated for A50.
++ */
++static vm_offset_t a50_gicd_base;
++static vm_offset_t a50_gicc_base;
++
++static uint32_t
++a50_gic_read32(vm_offset_t base, vm_offset_t offset)
++{
++	return *((volatile uint32_t *)(base + offset));
++}
++
++static void
++a50_gic_write32(vm_offset_t base, vm_offset_t offset, uint32_t value)
++{
++	*((volatile uint32_t *)(base + offset)) = value;
++}
++
++uint32_t
++pe_a50_gicv2_ack(void)
++{
++	if (!a50_gicc_base) {
++		panic("%s: GICv2 CPU interface is not mapped", __func__);
++	}
++	return a50_gic_read32(a50_gicc_base, A50_GICC_IAR);
++}
++
++void
++pe_a50_gicv2_eoi(uint32_t iar)
++{
++	a50_gic_write32(a50_gicc_base, A50_GICC_EOIR, iar);
++}
++
++void
++pe_a50_gicv2_send_sgi(uint32_t target_mpidr)
++{
++	uint64_t current_mpidr = __builtin_arm_rsr64("MPIDR_EL1");
++	uint32_t current = (uint32_t)current_mpidr & 0x00FFFFFFU;
++	const uint32_t same_group_mask = 0x00FFFF00U;
++	uint32_t sgi;
++
++	if (current == (target_mpidr & 0x00FFFFFFU)) {
++		/* GICv2 filter 2 targets the sending CPU itself. */
++		sgi = (2U << 24) | A50_IPI_SGI;
++	} else if ((current & same_group_mask) ==
++	    (target_mpidr & same_group_mask) && (target_mpidr & 0xFFU) < 8) {
++		/* The target list addresses CPUs in the sender's affinity group. */
++		sgi = (1U << (16 + (target_mpidr & 0x7U))) | A50_IPI_SGI;
++	} else {
++		/* GICv2 cannot target another affinity group directly; wake all peers. */
++		sgi = (1U << 24) | A50_IPI_SGI;
++	}
++	a50_gic_write32(a50_gicd_base, A50_GICD_SGIR, sgi);
++	__asm__ volatile("dsb sy; isb" ::: "memory");
++}
++
++void
++pe_init_fiq(void)
++{
++	int error;
++	DTEntry entry;
++	uint64_t reg[4];
++
++	if (!a50_gicd_base || !a50_gicc_base) {
++		error = SecureDTLookupEntry(NULL, "/arm-io/gic", &entry);
++		if (error != kSuccess) {
++			panic("%s: cannot find A50 GIC node in ADT", __func__);
++		}
++
++		void const *prop;
++		unsigned int prop_size = 0;
++		error = SecureDTGetProperty(entry, "reg", &prop, &prop_size);
++		if (error != kSuccess) {
++			panic("%s: cannot read A50 GIC reg property", __func__);
++		}
++		if (prop_size < sizeof(reg)) {
++			panic("%s: invalid A50 GIC reg property (%u bytes)", __func__, prop_size);
++		}
++		memcpy(reg, prop, sizeof(reg));
++
++		vm_offset_t soc_base_phys = pe_arm_get_soc_base_phys();
++		a50_gicd_base = ml_io_map(soc_base_phys + reg[0], reg[1]);
++		a50_gicc_base = ml_io_map(soc_base_phys + reg[2], reg[3]);
++		if (!a50_gicd_base || !a50_gicc_base) {
++			panic("%s: cannot map A50 GICD/GICC regions", __func__);
++		}
++	}
++
++	uint32_t irq_mask = (1U << A50_VTIMER_INTID) | (1U << A50_IPI_SGI);
++	a50_gic_write32(a50_gicd_base, A50_GICD_IGROUPR0,
++	    a50_gic_read32(a50_gicd_base, A50_GICD_IGROUPR0) | irq_mask);
++	volatile uint8_t *priority = (volatile uint8_t *)(a50_gicd_base + A50_GICD_IPRIORITYR0);
++	priority[A50_VTIMER_INTID] = 0xA0;
++	priority[A50_IPI_SGI] = 0xA0;
++	a50_gic_write32(a50_gicd_base, A50_GICD_ISENABLER0, irq_mask);
++
++	a50_gic_write32(a50_gicc_base, A50_GICC_PMR, 0xFF);
++	a50_gic_write32(a50_gicc_base, A50_GICC_BPR, 0);
++	a50_gic_write32(a50_gicd_base, A50_GICD_CTLR,
++	    a50_gic_read32(a50_gicd_base, A50_GICD_CTLR) | (1U << 1));
++	a50_gic_write32(a50_gicc_base, A50_GICC_CTLR,
++	    a50_gic_read32(a50_gicc_base, A50_GICC_CTLR) | (1U << 1));
++	__asm__ volatile("dsb sy; isb" ::: "memory");
++}
+ #else
+ void
+ pe_init_fiq()
+diff --git a/pexpert/pexpert/arm/protos.h b/pexpert/pexpert/arm/protos.h
+index 9004f2b..ef1a621 100644
+--- a/pexpert/pexpert/arm/protos.h
++++ b/pexpert/pexpert/arm/protos.h
+@@ -36,6 +36,9 @@ void uart_putc_options(char, bool);
+ int uart_getc(void);
+ 
+ void pe_init_fiq(void);
++uint32_t pe_a50_gicv2_ack(void);
++void pe_a50_gicv2_eoi(uint32_t iar);
++void pe_a50_gicv2_send_sgi(uint32_t target_mpidr);
+ #if defined(ARM64_BOARD_CONFIG_SWEET)
+ extern uint32_t sweet_vtimer_intid;
+ #endif
+diff --git a/pexpert/pexpert/arm64/A50.h b/pexpert/pexpert/arm64/A50.h
+new file mode 100644
+index 0000000..abc3dae
+--- /dev/null
++++ b/pexpert/pexpert/arm64/A50.h
+@@ -0,0 +1,33 @@
++/*
++ * Board configuration for Samsung Galaxy A50 (SM-A505F, Exynos 9610).
++ * Reuse SWEET's open ARM64/XNU platform support, with A50's ARMv8-A cores
++ * and memory-mapped GICv2 CPU interface.
++ */
++#ifndef _PEXPERT_ARM64_A50_H
++#define _PEXPERT_ARM64_A50_H
++
++#include <pexpert/arm64/SWEET.h>
++
++#define A50_GIC_V2                1
++#define A50_VTIMER_INTID          27
++#define A50_IPI_SGI               1
++
++#undef HAS_GIC_V3
++#define HAS_GIC_V3              0
++/* Cortex-A53/A73 implement ARMv8-A; don't compile optional PAN/AES paths. */
++#undef __ARM_PAN_AVAILABLE__
++#undef __ARM_V8_CRYPTO_EXTENSIONS__
++
++#define A50_GICD_CTLR             0x000
++#define A50_GICD_IGROUPR0         0x080
++#define A50_GICD_ISENABLER0       0x100
++#define A50_GICD_IPRIORITYR0      0x400
++#define A50_GICD_SGIR             0xF00
++
++#define A50_GICC_CTLR             0x000
++#define A50_GICC_PMR              0x004
++#define A50_GICC_BPR              0x008
++#define A50_GICC_IAR              0x00C
++#define A50_GICC_EOIR             0x010
++
++#endif /* _PEXPERT_ARM64_A50_H */
+diff --git a/pexpert/pexpert/arm64/Makefile b/pexpert/pexpert/arm64/Makefile
+index c7d274f..dd78534 100644
+--- a/pexpert/pexpert/arm64/Makefile
++++ b/pexpert/pexpert/arm64/Makefile
+@@ -18,7 +18,8 @@ PRIVATE_KERNELFILES = \
+ 	H13.h \
+ 	VMAPPLE.h \
+ 	BCM2837.h \
+-	SWEET.h
++	SWEET.h \
++	A50.h
+ 
+ 
+ # Headers installed into System.framework/PrivateHeaders (userspace internal SDK only).
+diff --git a/pexpert/pexpert/arm64/board_config.h b/pexpert/pexpert/arm64/board_config.h
+index 0d5f7cc..caeaf65 100644
+--- a/pexpert/pexpert/arm64/board_config.h
++++ b/pexpert/pexpert/arm64/board_config.h
+@@ -97,7 +97,14 @@
+ #define CORE_NCTRS                     8 /* Placeholder; KPC is not enabled for this target */
+ #endif  /* ARM64_BOARD_CONFIG_BCM2837 */
+ 
+-#ifdef ARM64_BOARD_CONFIG_SWEET
++#if defined(ARM64_BOARD_CONFIG_A50)
++#include <pexpert/arm64/A50.h>
++
++#define MAX_L2_CLINE                   6
++#define MAX_CPUS                       8
++#define MAX_CPU_CLUSTERS               2
++#define CORE_NCTRS                     8
++#elif defined(ARM64_BOARD_CONFIG_SWEET)
+ #include <pexpert/arm64/SWEET.h>
+ 
+ #define MAX_L2_CLINE                   6

@@ -2,7 +2,7 @@
 
 ## Status
 
-This repository does **not** boot on the Samsung Galaxy A50. Its current target is the Redmi Note 12 4G (`topaz`, Qualcomm SM6225). This file records the work needed to start a separate A50 board port; it does not claim that an A50 image has been built or tested.
+This repository does **not** boot on the Samsung Galaxy A50. Its working target remains the Redmi Note 12 4G (`topaz`, Qualcomm SM6225). There is now an experimental XNU `A50` machine configuration and an initial GICv2 interrupt/timer patch, but they have not been compiled or run on the phone. This is a first kernel port step, not an A50 boot image.
 
 The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `exynos9610`, Android 11 build `A505FDDS9CWA1`, CSC `TUR`. Samsung's [release notice](https://doc.samsungmobile.com/SM-A505F/006810190531/eng.html) lists that same build and Android 11. Samsung lists an Exynos 9610, four 2.3 GHz plus four 1.7 GHz CPU cores, and a 1080x2340 Super AMOLED display for the A50. Public SM-A505F device work identifies the Exynos 9610's Cortex-A73/Cortex-A53 clusters, Mali-G72 MP3 GPU and Samsung S-Boot; that project also records no fastboot boot path. Sources: [Samsung A50 specifications](https://www.samsung.com/fr/support/mobile-devices/quelles-sont-les-caracteristiques-techniques-du-galaxy-a50/) and [A50 device base](https://github.com/sadatdaniel/a50-halium).
 
@@ -15,6 +15,12 @@ The connected handset is now confirmed as `SM-A505F` (`a50` / `a50dd`), board `e
 | The base XNU series `0001–0079` came from the Redmi Note 10 Pro (`sweet`, Qualcomm SM7150); `0080+` adapts it to topaz (SM6225). The combined tree includes Qualcomm-specific CPU/GIC, framebuffer, UFS, QUP touch, PMIC, Wi-Fi/modem and Adreno paths. | Treat both patch groups as hardware-porting material. Reuse only the OS/userland compatibility pieces after reviewing them; replace the board, boot, interrupt, storage and display support for Exynos9610. The A50 has a Mali GPU, so the Adreno 610 path cannot be used. |
 | `sweet_ufs.c` talks to the topaz Qualcomm UFS host at `0x4804000`, and the install guide writes the iOS image to topaz `userdata`. | Identify the A50 UFS controller and partition map from the exact stock firmware. Do not reuse the topaz block device, offsets, or `userdata` flash command. |
 | Display setup assumes a 1080x2400 topaz panel and its Qualcomm MDP. | Add an Exynos display pipeline and the A50's 1080x2340 panel timing before expecting the iOS UI to appear. |
+
+## Experimental XNU target
+
+`xnu/patches/0951-a50-gicv2.patch` adds a separate `MACHINE_CONFIG=A50`, GICv2 MMIO interrupt handling, the candidate Exynos virtual-timer interrupt, and A50 CPU MPIDR handling. The XNU patch applies cleanly after the existing patch series in a scratch source tree. It has not passed a GitHub Actions build yet and its register layout is still based on public Samsung source, not the connected phone's live DT. The workflow now offers `A50` as a build choice.
+
+The target does not include an A50 shim or ADT, Samsung boot handoff, Exynos UFS driver, or DECON display driver. It cannot produce an image suitable for this handset yet.
 
 ## Candidate hardware facts from Samsung's A50 kernel source
 
@@ -39,7 +45,7 @@ The public [Exynos 9610/A505F kernel source](https://github.com/samsung-galaxy-a
 
 ## Current boundary
 
-The work in this checkout is a hardware assessment and port checklist with an A50 Android boot-image repacker. There is no A50 ADT, shim, XNU patch set, built image or device boot result yet. The repository's existing topaz instructions remain valid only for the Redmi Note 12 4G. No A50 image should be flashed or booted from this tree.
+The work in this checkout includes an Android boot-image repacker and the first experimental A50 XNU patch, in addition to the hardware assessment. There is still no A50 ADT, shim, compiled kernel image or device boot result. The repository's existing topaz instructions remain valid only for the Redmi Note 12 4G. No A50 image should be flashed or booted from this tree.
 
 ## Live connected-device inspection (2026-10-27)
 
